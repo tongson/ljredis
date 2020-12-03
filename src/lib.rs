@@ -44,7 +44,7 @@ pub extern "C" fn get(c: *const c_char) -> *const c_char {
     Err(_) => return cs(eot),
   };
   let cb = unsafe { CStr::from_ptr(c).to_bytes() };
-    let _ :() = match redis::cmd("GET").arg(cb).query::<Vec<u8>>(&mut con) {
+  let _ :() = match redis::cmd("GET").arg(cb).query::<Vec<u8>>(&mut con) {
     Ok(s) => return cs(s),
     Err(_) => return cs(eot),
   };
