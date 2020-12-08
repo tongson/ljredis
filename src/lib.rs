@@ -5,6 +5,8 @@ use std::panic;
 extern crate redis;
 extern crate base64;
 
+const HOST: &str = "127.0.0.1";
+
 fn cs(s: Vec<u8>) -> *const c_char {
   let c_str = CString::new(s).unwrap();
   let ptr = c_str.as_ptr();
@@ -17,7 +19,7 @@ pub extern "C" fn incr(c: *const c_char) -> *const c_char {
   let nak: Vec<u8> = b"\x21".to_vec();
   let ack: Vec<u8> = b"\x06".to_vec();
   panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.incr()")));
-  let client = match redis::Client::open("redis://127.0.0.1/") {
+  let client = match redis::Client::open(format!("redis://{}/", HOST)) {
     Ok(client) => client,
     Err(_) => return cs(nak),
   };
@@ -36,7 +38,7 @@ pub extern "C" fn incr(c: *const c_char) -> *const c_char {
 pub extern "C" fn get(c: *const c_char) -> *const c_char {
   let nak: Vec<u8> = b"\x21".to_vec();
   panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.get()")));
-  let client = match redis::Client::open("redis://127.0.0.1/") {
+  let client = match redis::Client::open(format!("redis://{}/", HOST)) {
     Ok(client) => client,
     Err(_) => return cs(nak),
   };
@@ -55,7 +57,7 @@ pub extern "C" fn get(c: *const c_char) -> *const c_char {
 pub extern "C" fn qget(c: *const c_char) -> *const c_char {
   let nak: Vec<u8> = b"\x21".to_vec();
   panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.qget()")));
-  let client = match redis::Client::open("redis://127.0.0.1/") {
+  let client = match redis::Client::open(format!("redis://{}/", HOST)) {
     Ok(client) => client,
     Err(_) => return cs(nak),
   };
