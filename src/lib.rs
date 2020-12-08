@@ -3,6 +3,7 @@ use std::os::raw::c_char;
 use std::panic;
 
 extern crate redis;
+extern crate base64;
 
 fn cs(s: Vec<u8>) -> *const c_char {
   let c_str = CString::new(s).unwrap();
@@ -45,7 +46,7 @@ pub extern "C" fn get(c: *const c_char) -> *const c_char {
   };
   let cb = unsafe { CStr::from_ptr(c).to_bytes() };
   let _ :() = match redis::cmd("GET").arg(cb).query::<Vec<u8>>(&mut con) {
-    Ok(s) => return cs(s),
+    Ok(s) => return cs(base64::encode(s).as_bytes().to_vec()),
     Err(_) => return cs(nak),
   };
 }
