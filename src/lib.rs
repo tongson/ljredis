@@ -50,3 +50,22 @@ pub extern "C" fn get(c: *const c_char) -> *const c_char {
     Err(_) => return cs(nak),
   };
 }
+
+#[no_mangle]
+pub extern "C" fn qget(c: *const c_char) -> *const c_char {
+  let nak: Vec<u8> = b"\x21".to_vec();
+  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.qget()")));
+  let client = match redis::Client::open("redis://127.0.0.1/") {
+    Ok(client) => client,
+    Err(_) => return cs(nak),
+  };
+  let mut con = match client.get_connection() {
+    Ok(con) => con,
+    Err(_) => return cs(nak),
+  };
+  let cb = unsafe { CStr::from_ptr(c).to_bytes() };
+  let _ :() = match redis::cmd("GET").arg(cb).query::<Vec<u8>>(&mut con) {
+    Ok(s) => return cs(s),
+    Err(_) => return cs(nak),
+  };
+}
