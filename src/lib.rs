@@ -103,19 +103,19 @@ pub extern "C" fn set(c: *const c_char) -> *const c_char {
   let cb = unsafe { CStr::from_ptr(c).to_bytes() };
   let j: Args = from_slice(cb).unwrap();
   let d: HashMap<String, String> = j.data;
-  let mut ret: Vec<u8> = vec!(21);
+  let mut ret: Vec<u8> = vec!(6);
   if j.expire == "0" {
-    'rloop: for (k, v) in &d {
+    'loop: for (k, v) in &d {
       let _ : () = match redis::cmd("SET").arg(k).arg(v).query::<Vec<u8>>(&mut con) {
-        Ok(_) => { ret = vec!(6); break 'rloop; },
-        Err(_) => { ret = vec!(21); break 'rloop; },
+        Ok(_) => {},
+        Err(_) => { ret = vec!(21); break 'loop; },
       };
     }
     return cs(ret);
   } else {
     'eloop: for (k, v) in &d {
-      let _ : () = match redis::cmd("SET").arg(k).arg(v).arg("EX").arg(j.expire).query::<Vec<u8>>(&mut con) {
-        Ok(_) => { ret = vec!(6); break 'eloop; },
+      let _ : () = match redis::cmd("SET").arg(k).arg(v).arg("EX").arg(&j.expire).query::<Vec<u8>>(&mut con) {
+        Ok(_) => {},
         Err(_) => { ret = vec!(21); break 'eloop; },
       };
     }
