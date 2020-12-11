@@ -4,6 +4,10 @@ use std::panic;
 
 extern crate redis;
 extern crate base64;
+extern crate serde_json;
+use std::collections::HashMap;
+use serde::{Deserialize};
+use serde_json::from_slice;
 
 const HOST: &str = "127.0.0.1";
 
@@ -76,4 +80,45 @@ pub extern "C" fn qget(c: *const c_char) -> *const c_char {
     Ok(s) => return cs(s),
     Err(_) => return cs(nak),
   };
+}
+
+#[no_mangle]
+pub extern "C" fn set(c: *const c_char) -> *const c_char {
+  let dc2: Vec<u8> = vec!(18);
+  let dc4: Vec<u8> = vec!(20);
+  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.set()")));
+  #[derive(Deserialize)]
+  struct Args {
+    expire: String,
+    data: HashMap<String, String>,
+  }
+  let client = match redis::Client::open(format!("redis://{}/", HOST)) {
+    Ok(client) => client,
+    Err(_) => return cs(dc2),
+  };
+  let mut con = match client.get_connection() {
+    Ok(con) => con,
+    Err(_) => return cs(dc4),
+  };
+  let cb = unsafe { CStr::from_ptr(c).to_bytes() };
+  let j: Args = from_slice(cb).unwrap();
+  let d: HashMap<String, String> = j.data;
+  let mut ret: Vec<u8> = vec!(21);
+  if j.expire == "0" {
+    'rloop: for (k, v) in &d {
+      let _ : () = match redis::cmd("SET").arg(k).arg(v).query::<Vec<u8>>(&mut con) {
+        Ok(_) => { ret = vec!(6); break 'rloop; },
+        Err(_) => { ret = vec!(21); break 'rloop; },
+      };
+    }
+    return cs(ret);
+  } else {
+    'eloop: for (k, v) in &d {
+      let _ : () = match redis::cmd("SET").arg(k).arg(v).arg("EX").arg(j.expire).query::<Vec<u8>>(&mut con) {
+        Ok(_) => { ret = vec!(6); break 'eloop; },
+        Err(_) => { ret = vec!(21); break 'eloop; },
+      };
+    }
+    return cs(ret);
+  }
 }
