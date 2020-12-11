@@ -105,16 +105,21 @@ pub extern "C" fn set(c: *const c_char) -> *const c_char {
   let d: HashMap<String, String> = j.data;
   let mut ret: Vec<u8> = vec!(6);
   if j.expire == "0" {
-    'loop: for (k, v) in &d {
+    'zloop: for (k, v) in &d {
       let _ : () = match redis::cmd("SET").arg(k).arg(v).query::<Vec<u8>>(&mut con) {
         Ok(_) => {},
-        Err(_) => { ret = vec!(21); break 'loop; },
+        Err(_) => { ret = vec!(21); break 'zloop; },
       };
     }
     return cs(ret);
   } else {
     'eloop: for (k, v) in &d {
-      let _ : () = match redis::cmd("SET").arg(k).arg(v).arg("EX").arg(&j.expire).query::<Vec<u8>>(&mut con) {
+      let _ : () = match redis::cmd("SET")
+        .arg(k)
+        .arg(v)
+        .arg("EX")
+        .arg(&j.expire)
+        .query::<Vec<u8>>(&mut con) {
         Ok(_) => {},
         Err(_) => { ret = vec!(21); break 'eloop; },
       };
