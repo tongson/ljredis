@@ -120,9 +120,9 @@ pub extern "C" fn set(c: *const c_char) -> *const c_char {
         .arg("EX")
         .arg(&j.expire)
         .query::<Vec<u8>>(&mut con) {
-        Ok(_) => {},
-        Err(_) => { ret = vec!(21); break 'eloop; },
-      };
+          Ok(_) => {},
+          Err(_) => { ret = vec!(21); break 'eloop; },
+        };
     }
     return cs(ret);
   }
