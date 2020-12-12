@@ -126,26 +126,29 @@ pub extern "C" fn set(c: *const c_char) -> *const c_char {
   let j: Args = from_slice(cb).unwrap();
   let d: HashMap<String, String> = j.data;
   let mut ret: Vec<u8> = vec!(6);
-  if j.expire == "0" {
-    'zloop: for (k, v) in &d {
-      let _ : () = match redis::cmd("SET").arg(k).arg(v).query::<String>(&mut con) {
-        Ok(_) => {},
-        Err(_) => { ret = vec!(21); break 'zloop; },
-      };
-    }
-    return cs(ret);
-  } else {
-    'eloop: for (k, v) in &d {
-      let _ : () = match redis::cmd("SET")
-        .arg(k)
-        .arg(v)
-        .arg("EX")
-        .arg(&j.expire)
-        .query::<String>(&mut con) {
+  match j.expire.as_str() {
+    "0" => {
+      for (k, v) in &d {
+        let _ : () = match redis::cmd("SET").arg(k).arg(v).query::<String>(&mut con) {
           Ok(_) => {},
-          Err(_) => { ret = vec!(21); break 'eloop; },
+          Err(_) => { ret = vec!(21); break; },
         };
-    }
-    return cs(ret);
-  }
+      }
+      return cs(ret);
+    },
+    _ => {
+      for (k, v) in &d {
+        let _ : () = match redis::cmd("SET")
+          .arg(k)
+          .arg(v)
+          .arg("EX")
+          .arg(&j.expire)
+          .query::<String>(&mut con) {
+            Ok(_) => {},
+            Err(_) => { ret = vec!(21); break; },
+          };
+      }
+      return cs(ret);
+    },
+  };
 }
