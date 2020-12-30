@@ -136,7 +136,7 @@ pub extern "C" fn get(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn json_set(c: *const c_char) -> *const c_char {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.set()")));
+  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.json_set()")));
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
   #[derive(Deserialize)]
