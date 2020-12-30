@@ -20,11 +20,11 @@ fn cs(s: Vec<u8>) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn del(c: *const c_char) -> *const c_char {
+  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.del()")));
   let ack: Vec<u8> = vec![6];
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
   let nak: Vec<u8> = vec![21];
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.del()")));
   let client = match redis::Client::open(format!("redis://{}/", HOST)) {
     Ok(rc) => rc,
     Err(_) => return cs(dc2),
@@ -42,11 +42,11 @@ pub extern "C" fn del(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn unlink(c: *const c_char) -> *const c_char {
+  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.unlink()")));
   let ack: Vec<u8> = vec![6];
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
   let nak: Vec<u8> = vec![21];
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.unlink()")));
   let client = match redis::Client::open(format!("redis://{}/", HOST)) {
     Ok(rc) => rc,
     Err(_) => return cs(dc2),
@@ -64,11 +64,11 @@ pub extern "C" fn unlink(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn incr(c: *const c_char) -> *const c_char {
+  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.incr()")));
   let ack: Vec<u8> = vec![6];
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
   let nak: Vec<u8> = vec![21];
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.incr()")));
   let client = match redis::Client::open(format!("redis://{}/", HOST)) {
     Ok(rc) => rc,
     Err(_) => return cs(dc2),
@@ -86,10 +86,10 @@ pub extern "C" fn incr(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn get(c: *const c_char) -> *const c_char {
+  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.get()")));
   let nak: Vec<u8> = vec![21];
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.get()")));
   let client = match redis::Client::open(format!("redis://{}/", HOST)) {
     Ok(client) => client,
     Err(_) => return cs(dc2),
@@ -107,10 +107,10 @@ pub extern "C" fn get(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn qget(c: *const c_char) -> *const c_char {
+  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.qget()")));
   let nak: Vec<u8> = vec![21];
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.qget()")));
   let client = match redis::Client::open(format!("redis://{}/", HOST)) {
     Ok(client) => client,
     Err(_) => return cs(dc2),
@@ -128,9 +128,9 @@ pub extern "C" fn qget(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn set(c: *const c_char) -> *const c_char {
+  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.set()")));
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.set()")));
   #[derive(Deserialize)]
   struct Args {
     expire: String,
