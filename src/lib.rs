@@ -249,3 +249,34 @@ pub extern "C" fn set(c: *const c_char) -> *const c_char {
     }
   };
 }
+
+#[no_mangle]
+pub extern "C" fn json_del(c: *const c_char) -> *const c_char {
+  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.json_del()")));
+  let nak: Vec<u8> = vec![21];
+  let dc2: Vec<u8> = vec![18];
+  let dc4: Vec<u8> = vec![20];
+  #[derive(Deserialize)]
+  struct Args {
+    key: String,
+    path: String,
+  }
+  let client = match redis::Client::open(format!("redis://{}/", HOST)) {
+    Ok(client) => client,
+    Err(_) => return cs(dc2),
+  };
+  let mut con = match client.get_connection() {
+    Ok(con) => con,
+    Err(_) => return cs(dc4),
+  };
+  let cb = unsafe { CStr::from_ptr(c).to_bytes() };
+  let j: Args = from_slice(cb).unwrap();
+  let key: String = j.key;
+  let path: String = j.path;
+  let _: () = match redis::cmd("JSON.DEL").arg(key).arg(path).query::<Vec<u8>>(&mut con) {
+    Ok(s) => return cs(s),
+    Err(_) => return cs(nak),
+  };
+}
+
+
