@@ -107,7 +107,11 @@ pub extern "C" fn json_get(c: *const c_char) -> *const c_char {
   let j: Args = from_slice(cb).unwrap();
   let key: String = j.key;
   let path: String = j.path;
-  let _: () = match redis::cmd("JSON.GET").arg(key).arg(path).query::<Vec<u8>>(&mut con) {
+  let _: () = match redis::cmd("JSON.GET")
+    .arg(key)
+    .arg(path)
+    .query::<Vec<u8>>(&mut con)
+  {
     Ok(s) => return cs(s),
     Err(_) => return cs(nak),
   };
@@ -273,10 +277,12 @@ pub extern "C" fn json_del(c: *const c_char) -> *const c_char {
   let j: Args = from_slice(cb).unwrap();
   let key: String = j.key;
   let path: String = j.path;
-  let _: () = match redis::cmd("JSON.DEL").arg(key).arg(path).query::<Vec<u8>>(&mut con) {
+  let _: () = match redis::cmd("JSON.DEL")
+    .arg(key)
+    .arg(path)
+    .query::<Vec<u8>>(&mut con)
+  {
     Ok(s) => return cs(s),
     Err(_) => return cs(nak),
   };
 }
-
-
