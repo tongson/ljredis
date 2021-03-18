@@ -1,2 +1,2 @@
-# rediz
-Janky redis wrapper for bitcask connection
+# redis
+redis crate FFI wrapper.
