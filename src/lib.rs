@@ -1,5 +1,5 @@
 use std::ffi::{CStr, CString};
-use std::os::raw::c_char;
+use std::os::raw::{c_char, c_uint, c_int, c_uchar};
 use std::panic;
 
 extern crate base64;
