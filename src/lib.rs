@@ -20,7 +20,7 @@ fn cs(s: Vec<u8>) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn del(c: *const c_char) -> *const c_char {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.del()")));
+  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.del()")));
   let ack: Vec<u8> = vec![6];
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
@@ -42,7 +42,7 @@ pub extern "C" fn del(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn unlink(c: *const c_char) -> *const c_char {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.unlink()")));
+  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.unlink()")));
   let ack: Vec<u8> = vec![6];
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
@@ -64,7 +64,7 @@ pub extern "C" fn unlink(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn incr(c: *const c_char) -> *const c_char {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.incr()")));
+  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.incr()")));
   let ack: Vec<u8> = vec![6];
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
@@ -86,7 +86,7 @@ pub extern "C" fn incr(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn json_get(c: *const c_char) -> *const c_char {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.json_get()")));
+  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.json_get()")));
   let nak: Vec<u8> = vec![21];
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
@@ -119,7 +119,7 @@ pub extern "C" fn json_get(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn get(c: *const c_char) -> *const c_char {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.get()")));
+  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.get()")));
   let nak: Vec<u8> = vec![21];
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
@@ -140,7 +140,7 @@ pub extern "C" fn get(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn json_set(c: *const c_char) -> *const c_char {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.json_set()")));
+  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.json_set()")));
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
   #[derive(Deserialize)]
@@ -200,7 +200,7 @@ pub extern "C" fn json_set(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn set(c: *const c_char) -> *const c_char {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.set()")));
+  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.set()")));
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
   #[derive(Deserialize)]
@@ -256,7 +256,7 @@ pub extern "C" fn set(c: *const c_char) -> *const c_char {
 
 #[no_mangle]
 pub extern "C" fn json_del(c: *const c_char) -> *const c_char {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: rediz.json_del()")));
+  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.json_del()")));
   let nak: Vec<u8> = vec![21];
   let dc2: Vec<u8> = vec![18];
   let dc4: Vec<u8> = vec![20];
