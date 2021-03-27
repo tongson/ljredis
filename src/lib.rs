@@ -11,9 +11,9 @@ use std::collections::HashMap;
 
 const ECLIENT: c_int = -43;
 const ECONN: c_int = -13;
+const EINVALID: c_int = -7;
 const EQUERY: c_int = -4;
 const OK: c_int = 0;
-
 
 fn buf(r: Vec<u8>, ptr: *mut c_uchar) -> c_int {
   let bytes = r.as_slice();
@@ -195,6 +195,43 @@ pub extern "C" fn json_set(h: *const c_char, c: *const c_char) ->  c_int {
       };
     }
   };
+}
+
+#[no_mangle]
+pub extern "C" fn hset(h: *const c_char, c: *const c_char) -> c_int {
+  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.hset()")));
+  let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
+  let client = match redis::Client::open(format!("redis://{}/", &ch)) {
+    Ok(client) => client,
+    Err(_) => return ECLIENT,
+  };
+  let mut conn = match client.get_connection() {
+    Ok(conn) => conn,
+    Err(_) => return ECONN,
+  };
+  let cb = unsafe { CStr::from_ptr(c).to_bytes() };
+  let j: HashMap<String, HashMap<String, String>> = match from_slice(cb) {
+    Ok(j) => j,
+    Err(_) => return EINVALID,
+  };
+  let mut ret: c_int = OK;
+  for (hash, map) in &j {
+    for (k, v) in map {
+      println!("{:#?} {:#?} {:#?}", hash, k, v);
+      let _: () = match redis::cmd("HSET")
+        .arg(hash)
+        .arg(k)
+        .arg(v)
+        .query::<i32>(&mut conn)
+      {
+        Ok(_) => {}
+        Err(_) => {
+          ret = EQUERY;
+        }
+      };
+    }
+  }
+  return ret;
 }
 
 #[no_mangle]
