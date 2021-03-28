@@ -83,39 +83,6 @@ pub extern "C" fn incr(h: *const c_char, c: *const c_char) -> c_int {
 }
 
 #[no_mangle]
-pub extern "C" fn json_get(h: *const c_char, c: *const c_char, b: *mut c_uchar) -> c_int {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.json_get()")));
-  let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
-  #[derive(Deserialize)]
-  struct Args {
-    key: String,
-    path: String,
-  }
-  let client = match redis::Client::open(format!("redis://{}/", &ch)) {
-    Ok(client) => client,
-    Err(_) => return ECLIENT,
-  };
-  let mut con = match client.get_connection() {
-    Ok(con) => con,
-    Err(_) => return ECONN,
-  };
-  let cb = unsafe { CStr::from_ptr(c).to_bytes() };
-  let j: Args = from_slice(cb).unwrap();
-  let key: String = j.key;
-  let path: String = j.path;
-  let _: () = match redis::cmd("JSON.GET")
-    .arg(key)
-    .arg(path)
-    .query::<Vec<u8>>(&mut con)
-  {
-    Ok(s) => {
-      return buf(s, b);
-    }
-    Err(_) => return EQUERY,
-  };
-}
-
-#[no_mangle]
 pub extern "C" fn get(h: *const c_char, c: *const c_char, b: *mut c_uchar) -> c_int {
   panic::set_hook(Box::new(move |_| eprintln!("panic: redis.get()")));
   let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
@@ -138,7 +105,7 @@ pub extern "C" fn get(h: *const c_char, c: *const c_char, b: *mut c_uchar) -> c_
 
 #[no_mangle]
 pub extern "C" fn hget(h: *const c_char, c: *const c_char, b: *mut c_uchar) -> c_int {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.json_get()")));
+  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.hget()")));
   let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
   #[derive(Deserialize)]
   struct Args {
@@ -167,66 +134,6 @@ pub extern "C" fn hget(h: *const c_char, c: *const c_char, b: *mut c_uchar) -> c
   {
     Ok(s) => return buf(s, b),
     Err(_) => return EQUERY,
-  };
-}
-
-#[no_mangle]
-pub extern "C" fn json_set(h: *const c_char, c: *const c_char) ->  c_int {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.json_set()")));
-  let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
-  #[derive(Deserialize)]
-  struct Args {
-    key: String,
-    path: String,
-    data: String,
-    nx: String,
-  }
-  let client = match redis::Client::open(format!("redis://{}/", &ch)) {
-    Ok(client) => client,
-    Err(_) => return ECLIENT,
-  };
-  let mut con = match client.get_connection() {
-    Ok(con) => con,
-    Err(_) => return ECONN,
-  };
-  let cb = unsafe { CStr::from_ptr(c).to_bytes() };
-  let j: Args = from_slice(cb).unwrap();
-  let key: String = j.key;
-  let path: String = j.path;
-  let rdata: Vec<u8> = base64::decode(j.data.as_bytes()).unwrap();
-  let data: String = String::from_utf8_lossy(&rdata).into_owned();
-  match j.nx.as_str() {
-    "false" => {
-      let _: () = match redis::cmd("JSON.SET")
-        .arg(key)
-        .arg(path)
-        .arg(data)
-        .query::<String>(&mut con)
-      {
-        Ok(_) => {
-          return OK;
-        }
-        Err(_) => {
-          return EQUERY;
-        }
-      };
-    }
-    _ => {
-      let _: () = match redis::cmd("JSON.SET")
-        .arg(key)
-        .arg(path)
-        .arg(data)
-        .arg("NX")
-        .query::<String>(&mut con)
-      {
-        Ok(_) => {
-          return OK;
-        }
-        Err(_) => {
-          return EQUERY;
-        }
-      };
-    }
   };
 }
 
@@ -353,37 +260,6 @@ pub extern "C" fn set(h: *const c_char, c: *const c_char) -> c_int {
         Err(_) => return EQUERY,
       };
     }
-  };
-}
-
-#[no_mangle]
-pub extern "C" fn json_del(h: *const c_char, c: *const c_char) -> c_int {
-  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.json_del()")));
-  let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
-  #[derive(Deserialize)]
-  struct Args {
-    key: String,
-    path: String,
-  }
-  let client = match redis::Client::open(format!("redis://{}/", &ch)) {
-    Ok(client) => client,
-    Err(_) => return ECLIENT,
-  };
-  let mut con = match client.get_connection() {
-    Ok(con) => con,
-    Err(_) => return ECONN,
-  };
-  let cb = unsafe { CStr::from_ptr(c).to_bytes() };
-  let j: Args = from_slice(cb).unwrap();
-  let key: String = j.key;
-  let path: String = j.path;
-  let _: () = match redis::cmd("JSON.DEL")
-    .arg(key)
-    .arg(path)
-    .query::<Vec<u8>>(&mut con)
-  {
-    Ok(_) => return OK,
-    Err(_) => return EQUERY,
   };
 }
 
