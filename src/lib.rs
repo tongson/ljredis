@@ -7,7 +7,6 @@ extern crate redis;
 extern crate serde_json;
 use serde::Deserialize;
 use serde_json::from_slice;
-use std::collections::HashMap;
 
 const ECLIENT: c_int = -43;
 const ECONN: c_int = -13;
@@ -40,7 +39,7 @@ pub extern "C" fn del(h: *const c_char, c: *const c_char) -> c_int {
   };
   let cb = unsafe { CStr::from_ptr(c).to_bytes() };
   let _: () = match redis::cmd("DEL").arg(cb).query::<i32>(&mut con) {
-    Ok(_) => return OK,
+    Ok(i) => return i,
     Err(_) => return EQUERY,
   };
 }
@@ -78,7 +77,7 @@ pub extern "C" fn incr(h: *const c_char, c: *const c_char) -> c_int {
   };
   let cb = unsafe { CStr::from_ptr(c).to_bytes() };
   let _: () = match redis::cmd("INCR").arg(cb).query::<i32>(&mut con) {
-    Ok(_) => return OK,
+    Ok(i) => return i,
     Err(_) => return EQUERY,
   };
 }
@@ -143,7 +142,7 @@ pub extern "C" fn hget(h: *const c_char, c: *const c_char, b: *mut c_uchar) -> c
   let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
   #[derive(Deserialize)]
   struct Args {
-    hash: String,
+    key: String,
     field: String,
   }
   let client = match redis::Client::open(format!("redis://{}/", &ch)) {
@@ -159,10 +158,10 @@ pub extern "C" fn hget(h: *const c_char, c: *const c_char, b: *mut c_uchar) -> c
     Ok(j) => j,
     Err(_) => return EINVALID,
   };
-  let hash: String = j.hash;
+  let key: String = j.key;
   let field: String = j.field;
   let _: () = match redis::cmd("HGET")
-    .arg(hash)
+    .arg(key)
     .arg(field)
     .query::<Vec<u8>>(&mut conn)
   {
@@ -234,6 +233,12 @@ pub extern "C" fn json_set(h: *const c_char, c: *const c_char) ->  c_int {
 #[no_mangle]
 pub extern "C" fn hset(h: *const c_char, c: *const c_char) -> c_int {
   panic::set_hook(Box::new(move |_| eprintln!("panic: redis.hset()")));
+  #[derive(Deserialize)]
+  struct Args {
+    key: String,
+    field: String,
+    value: String,
+  }
   let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
   let client = match redis::Client::open(format!("redis://{}/", &ch)) {
     Ok(client) => client,
@@ -244,32 +249,37 @@ pub extern "C" fn hset(h: *const c_char, c: *const c_char) -> c_int {
     Err(_) => return ECONN,
   };
   let cb = unsafe { CStr::from_ptr(c).to_bytes() };
-  let j: HashMap<String, HashMap<String, String>> = match from_slice(cb) {
+  let j: Args = match from_slice(cb) {
     Ok(j) => j,
     Err(_) => return EINVALID,
   };
   let mut ret: c_int = OK;
-  for (hash, map) in &j {
-    for (k, v) in map {
-      let _: () = match redis::cmd("HSET")
-        .arg(hash)
-        .arg(k)
-        .arg(v)
-        .query::<i32>(&mut conn)
-      {
-        Ok(_) => {}
-        Err(_) => {
-          ret = EQUERY;
-        }
-      };
+  let key: String = j.key;
+  let field: String = j.field;
+  let value: String = j.value;
+  let _: () = match redis::cmd("HSET")
+    .arg(key)
+    .arg(field)
+    .arg(value)
+    .query::<i32>(&mut conn)
+  {
+    Ok(_) => {}
+    Err(_) => {
+      ret = EQUERY;
     }
-  }
+  };
   return ret;
 }
 
 #[no_mangle]
 pub extern "C" fn hsetnx(h: *const c_char, c: *const c_char) -> c_int {
   panic::set_hook(Box::new(move |_| eprintln!("panic: redis.hsetnx()")));
+  #[derive(Deserialize)]
+  struct Args {
+    key: String,
+    field: String,
+    value: String,
+  }
   let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
   let client = match redis::Client::open(format!("redis://{}/", &ch)) {
     Ok(client) => client,
@@ -280,40 +290,34 @@ pub extern "C" fn hsetnx(h: *const c_char, c: *const c_char) -> c_int {
     Err(_) => return ECONN,
   };
   let cb = unsafe { CStr::from_ptr(c).to_bytes() };
-  let j: HashMap<String, HashMap<String, String>> = match from_slice(cb) {
+  let j: Args = match from_slice(cb) {
     Ok(j) => j,
     Err(_) => return EINVALID,
   };
-  let mut ret: c_int = 0;
-  for (hash, map) in &j {
-    for (k, v) in map {
-      let _: () = match redis::cmd("HSETNX")
-        .arg(hash)
-        .arg(k)
-        .arg(v)
-        .query::<i32>(&mut conn)
-      {
-        Ok(i) => {
-          ret  = i;
-        }
-        Err(_) => {
-          ret = EQUERY;
-        }
-      };
-    }
-  }
-  return ret;
+  let key: String = j.key;
+  let field: String = j.field;
+  let value: String = j.value;
+  let _: () = match redis::cmd("HSETNX")
+    .arg(key)
+    .arg(field)
+    .arg(value)
+    .query::<i32>(&mut conn)
+  {
+    Ok(i) => return i,
+    Err(_) => return EQUERY,
+  };
 }
 
 #[no_mangle]
 pub extern "C" fn set(h: *const c_char, c: *const c_char) -> c_int {
   panic::set_hook(Box::new(move |_| eprintln!("panic: redis.set()")));
-  let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
   #[derive(Deserialize)]
   struct Args {
     expire: String,
-    data: HashMap<String, String>,
+    key: String,
+    value: String,
   }
+  let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
   let client = match redis::Client::open(format!("redis://{}/", &ch)) {
     Ok(client) => client,
     Err(_) => return ECLIENT,
@@ -324,37 +328,30 @@ pub extern "C" fn set(h: *const c_char, c: *const c_char) -> c_int {
   };
   let cb = unsafe { CStr::from_ptr(c).to_bytes() };
   let j: Args = from_slice(cb).unwrap();
-  let d: HashMap<String, String> = j.data;
-  let mut ret: c_int = OK;
+  let key: String = j.key;
+  let value: String = j.value;
   match j.expire.as_str() {
     "0" => {
-      for (k, v) in &d {
-        let _: () = match redis::cmd("SET").arg(k).arg(v).query::<String>(&mut con) {
-          Ok(_) => {}
-          Err(_) => {
-            ret = EQUERY;
-          }
-        };
-      }
-      return ret;
+      let _: () = match redis::cmd("SET")
+        .arg(key)
+        .arg(value)
+        .query::<String>(&mut con)
+      {
+        Ok(_) => return OK,
+        Err(_) => return EQUERY,
+      };
     }
     _ => {
-      for (k, v) in &d {
-        let _: () = match redis::cmd("SET")
-          .arg(k)
-          .arg(v)
-          .arg("EX")
-          .arg(&j.expire)
-          .query::<String>(&mut con)
-        {
-          Ok(_) => {}
-          Err(_) => {
-            ret = EQUERY;
-            break;
-          }
-        };
-      }
-      return ret;
+      let _: () = match redis::cmd("SET")
+        .arg(key)
+        .arg(value)
+        .arg("EX")
+        .arg(&j.expire)
+        .query::<String>(&mut con)
+      {
+        Ok(_) => return OK,
+        Err(_) => return EQUERY,
+      };
     }
   };
 }
@@ -396,7 +393,7 @@ pub extern "C" fn hdel(h: *const c_char, c: *const c_char) -> c_int {
   let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
   #[derive(Deserialize)]
   struct Args {
-    hash: String,
+    key: String,
     field: String,
   }
   let client = match redis::Client::open(format!("redis://{}/", &ch)) {
@@ -412,14 +409,14 @@ pub extern "C" fn hdel(h: *const c_char, c: *const c_char) -> c_int {
     Ok(j) => j,
     Err(_) => return EINVALID,
   };
-  let hash: String = j.hash;
+  let key: String = j.key;
   let field: String = j.field;
   let _: () = match redis::cmd("HDEL")
-    .arg(hash)
+    .arg(key)
     .arg(field)
     .query::<i32>(&mut conn)
   {
-    Ok(_) => return OK,
+    Ok(i) => return i,
     Err(_) => return EQUERY,
   };
 }
