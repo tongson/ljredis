@@ -351,3 +351,37 @@ pub extern "C" fn json_del(h: *const c_char, c: *const c_char) -> c_int {
     Err(_) => return EQUERY,
   };
 }
+
+#[no_mangle]
+pub extern "C" fn hdel(h: *const c_char, c: *const c_char) -> c_int {
+  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.hdel()")));
+  let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
+  #[derive(Deserialize)]
+  struct Args {
+    hash: String,
+    field: String,
+  }
+  let client = match redis::Client::open(format!("redis://{}/", &ch)) {
+    Ok(client) => client,
+    Err(_) => return ECLIENT,
+  };
+  let mut conn = match client.get_connection() {
+    Ok(conn) => conn,
+    Err(_) => return ECONN,
+  };
+  let cb = unsafe { CStr::from_ptr(c).to_bytes() };
+  let j: Args = match from_slice(cb) {
+    Ok(j) => j,
+    Err(_) => return EINVALID,
+  };
+  let hash: String = j.hash;
+  let field: String = j.field;
+  let _: () = match redis::cmd("HDEL")
+    .arg(hash)
+    .arg(field)
+    .query::<i32>(&mut conn)
+  {
+    Ok(_) => return OK,
+    Err(_) => return EQUERY,
+  };
+}
