@@ -11,7 +11,7 @@ use std::collections::HashMap;
 
 const ECLIENT: c_int = -43;
 const ECONN: c_int = -13;
-const EINVALID: c_int = -7;
+const EINVALID: c_int = -9;
 const EQUERY: c_int = -4;
 const OK: c_int = 0;
 
