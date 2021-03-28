@@ -138,6 +138,40 @@ pub extern "C" fn get(h: *const c_char, c: *const c_char, b: *mut c_uchar) -> c_
 }
 
 #[no_mangle]
+pub extern "C" fn hget(h: *const c_char, c: *const c_char, b: *mut c_uchar) -> c_int {
+  panic::set_hook(Box::new(move |_| eprintln!("panic: redis.json_get()")));
+  let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
+  #[derive(Deserialize)]
+  struct Args {
+    hash: String,
+    field: String,
+  }
+  let client = match redis::Client::open(format!("redis://{}/", &ch)) {
+    Ok(client) => client,
+    Err(_) => return ECLIENT,
+  };
+  let mut conn = match client.get_connection() {
+    Ok(conn) => conn,
+    Err(_) => return ECONN,
+  };
+  let cb = unsafe { CStr::from_ptr(c).to_bytes() };
+  let j: Args = match from_slice(cb) {
+    Ok(j) => j,
+    Err(_) => return EINVALID,
+  };
+  let hash: String = j.hash;
+  let field: String = j.field;
+  let _: () = match redis::cmd("HGET")
+    .arg(hash)
+    .arg(field)
+    .query::<Vec<u8>>(&mut conn)
+  {
+    Ok(s) => return buf(s, b),
+    Err(_) => return EQUERY,
+  };
+}
+
+#[no_mangle]
 pub extern "C" fn json_set(h: *const c_char, c: *const c_char) ->  c_int {
   panic::set_hook(Box::new(move |_| eprintln!("panic: redis.json_set()")));
   let ch = unsafe { CStr::from_ptr(h).to_str().unwrap() };
@@ -217,7 +251,6 @@ pub extern "C" fn hset(h: *const c_char, c: *const c_char) -> c_int {
   let mut ret: c_int = OK;
   for (hash, map) in &j {
     for (k, v) in map {
-      println!("{:#?} {:#?} {:#?}", hash, k, v);
       let _: () = match redis::cmd("HSET")
         .arg(hash)
         .arg(k)
